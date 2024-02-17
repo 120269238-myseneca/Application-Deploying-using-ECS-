@@ -25,100 +25,60 @@ jobs:
             echo "approved=false" >> $GITHUB_OUTPUT
           fi
 
-
   terraform_destroy_app:
     needs: confirm
     if: needs.confirm.outputs.is_approved == 'true'
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v2
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v2
+      - uses: actions/checkout@v2
+      - uses: hashicorp/setup-terraform@v2
         with:
           terraform_version: 1.7.3
-          
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v1
+      - uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }} 
           aws-region: us-east-1
-
       - name: Terraform Init - APP
-        run: |
-          cd APP/
-          terraform init
-
+        run: cd APP/ && terraform init
       - name: Terraform Destroy - APP
-        run: |
-          cd APP/
-          terraform destroy -auto-approve
-
+        run: cd APP/ && terraform destroy -auto-approve
 
   terraform_destroy_rds:
-    needs: confirm
-    if: needs.confirm.outputs.is_approved == 'true'
+    needs: terraform_destroy_app
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v2
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v2
+      - uses: actions/checkout@v2
+      - uses: hashicorp/setup-terraform@v2
         with:
           terraform_version: 1.7.3
-          
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v1
+      - uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }} 
           aws-region: us-east-1
-
       - name: Terraform Init - RDS
-        run: |
-          cd RDS/
-          terraform init
-
+        run: cd RDS/ && terraform init
       - name: Terraform Destroy - RDS
-        run: |
-          cd RDS/
-          terraform destroy -auto-approve
-
+        run: cd RDS/ && terraform destroy -auto-approve
 
   terraform_destroy_vpc:
-    needs: confirm
-    if: needs.confirm.outputs.is_approved == 'true'
+    needs: terraform_destroy_rds
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v2
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v2
+      - uses: actions/checkout@v2
+      - uses: hashicorp/setup-terraform@v2
         with:
           terraform_version: 1.7.3
-          
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v1
+      - uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }} 
           aws-region: us-east-1
-
       - name: Terraform Init - VPC
-        run: |
-          cd VPC/
-          terraform init
-
+        run: cd VPC/ && terraform init
       - name: Terraform Destroy - VPC
-        run: |
-          cd VPC/
-          terraform destroy -auto-approve
-  
-
+        run: cd VPC/ && terraform destroy -auto-approve
