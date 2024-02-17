@@ -84,7 +84,7 @@ resource "aws_ecs_service" "ecs_service" {
   network_configuration {
     subnets         =  data.terraform_remote_state.network.outputs.webservers_subnet_id
     assign_public_ip = true
-    security_groups = [aws_security_group.ecs_tasks_sg.id]
+    security_groups = [data.terraform_remote_state.network.outputs.ecs_task_sg_id]
   }
 
   load_balancer {
@@ -99,20 +99,20 @@ resource "aws_ecs_service" "ecs_service" {
 
 }
 
-resource "aws_security_group" "ecs_tasks_sg" {
-  vpc_id = data.terraform_remote_state.network.outputs.vpc_id
+resource "aws_security_group_rule" "ecs_egress_to_rds" {
+  type              = "egress"
+  from_port         = 3306
+  to_port           = 3306
+  protocol          = "tcp"
+  security_group_id  = data.terraform_remote_state.network.outputs.ecs_task_sg_id
+  source_security_group_id     = data.terraform_remote_state.network.outputs.rds_sg_id
+}
 
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  ingress {
-    from_port   = 8080
-    to_port     = 8080
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
+resource "aws_security_group_rule" "ecs_ingress_from_alb" {
+  type              = "ingress"
+  from_port         = 8080
+  to_port           = 8080
+  protocol          = "tcp"
+  security_group_id = data.terraform_remote_state.network.outputs.ecs_task_sg_id
+  source_security_group_id = data.terraform_remote_state.network.outputs.alb_sg_id
 }

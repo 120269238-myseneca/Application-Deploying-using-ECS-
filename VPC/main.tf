@@ -140,3 +140,15 @@ resource "aws_route_table_association" "webservers_subnet_routetable_assoication
   subnet_id      = aws_subnet.webservers_private[count.index].id
   route_table_id = aws_route_table.webservers_private_routetable.id
 }
+
+resource "aws_security_group" "rds_sg" {
+  vpc_id = aws_vpc.main_cidr.id
+}
+
+resource "aws_security_group" "ecs_tasks_sg" {
+  vpc_id = aws_vpc.main_cidr.id
+}
+
+resource "aws_security_group" "alb_sg" {
+  vpc_id = aws_vpc.main_cidr.id
+}

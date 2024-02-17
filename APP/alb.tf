@@ -2,7 +2,7 @@ resource "aws_lb" "alb" {
   name               = "my-alb"
   internal           = false
   load_balancer_type = "application"
-  security_groups    = [aws_security_group.alb_sg.id]
+  security_groups    = [data.terraform_remote_state.network.outputs.alb_sg_id]
   subnets            = data.terraform_remote_state.network.outputs.public_subnet_id
 }
 
@@ -25,20 +25,23 @@ resource "aws_lb_listener" "lb_listener" {
   }
 }
 
-resource "aws_security_group" "alb_sg" {
-  vpc_id = data.terraform_remote_state.network.outputs.vpc_id
+resource "aws_security_group_rule" "ecs_egress_to_rds" {
+  type              = "egress"
+  from_port         = 80
+  to_port           = 80
+  protocol    = "-1"
+  cidr_blocks       = ["0.0.0.0/0"] 
+  security_group_id  = data.terraform_remote_state.network.outputs.ecs_task_sg_id
 
-  ingress {
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
+}
 
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
+
+resource "aws_security_group_rule" "alb_ingress_from_net" {
+  type              = "ingress"
+  from_port         = 80
+  to_port           = 80
+  protocol          = "tcp"
+  cidr_blocks       = ["0.0.0.0/0"] 
+  security_group_id = data.terraform_remote_state.network.outputs.alb_sg_id
+
 }
