@@ -1,0 +1,84 @@
+name: Terraform Destroy Workflow
+
+on:
+  workflow_dispatch:
+    inputs:
+      approver:
+        description: 'Terraform Destroy Approver'
+        required: true
+        default: '120269238-myseneca'
+
+jobs:
+  confirm:
+    runs-on: ubuntu-latest
+    outputs:
+      is_approved: ${{ steps.check_approval.outputs.approved }}
+    steps:
+      - name: Check Approver
+        id: check_approval
+        run: |
+          if [ "${{ github.event.inputs.approver }}" == "120269238-myseneca" ]; then
+            echo "Destroy approved by ${{ github.event.inputs.approver }}"
+            echo "approved=true" >> $GITHUB_OUTPUT
+          else
+            echo "Destroy not approved by ${{ github.event.inputs.approver }}"
+            echo "approved=false" >> $GITHUB_OUTPUT
+          fi
+
+  terraform_destroy_app:
+    needs: confirm
+    if: needs.confirm.outputs.is_approved == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.7.3
+      - uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }} 
+          aws-region: us-east-1
+      - name: Terraform Init - APP
+        run: cd APP/ && terraform init
+      - name: Terraform Destroy - APP
+        run: cd APP/ && terraform destroy -auto-approve
+
+  terraform_destroy_rds:
+    needs: terraform_destroy_app
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.7.3
+      - uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }} 
+          aws-region: us-east-1
+      - name: Terraform Init - RDS
+        run: cd RDS/ && terraform init
+      - name: Terraform Destroy - RDS
+        run: cd RDS/ && terraform destroy -auto-approve
+
+  terraform_destroy_vpc:
+    needs: terraform_destroy_rds
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.7.3
+      - uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }} 
+          aws-region: us-east-1
+      - name: Terraform Init - VPC
+        run: cd VPC/ && terraform init
+      - name: Terraform Destroy - VPC
+        run: cd VPC/ && terraform destroy -auto-approve
