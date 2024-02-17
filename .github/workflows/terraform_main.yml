@@ -1,0 +1,105 @@
+name: Terraform Deployment Workflow
+
+on:
+  push:
+    branches:
+      - main 
+  pull_request:
+    branches:
+      - main  
+
+jobs:
+  terraform_vpc:
+    name: Terraform VPC
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.7.3
+
+      - name: Terraform Init - VPC
+        run: |
+          cd VPC/
+          terraform init
+
+      - name: Terraform Validate - VPC
+        run: |
+          cd VPC/
+          terraform validate
+
+      - name: Terraform Apply - VPC
+        run: |
+          cd VPC/
+          terraform apply -auto-approve
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+  terraform_rds:
+    name: Terraform RDS
+    needs: terraform_vpc  
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.7.3
+
+      - name: Terraform Init - RDS
+        run: |
+          cd RDS/
+          terraform init
+
+      - name: Terraform Validate - RDS
+        run: |
+          cd RDS/
+          terraform validate
+
+      - name: Terraform Apply - RDS
+        run: |
+          cd RDS/
+          terraform apply -auto-approve
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+  terraform_app:
+    name: Terraform APP
+    needs: terraform_rds  
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.7.3
+
+      - name: Terraform Init - APP
+        run: |
+          cd APP/
+          terraform init
+
+      - name: Terraform Validate - APP
+        run: |
+          cd APP/
+          terraform validate
+
+      - name: Terraform Apply - APP
+        run: |
+          cd APP/
+          terraform apply -auto-approve
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
