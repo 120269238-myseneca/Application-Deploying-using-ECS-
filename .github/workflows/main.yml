@@ -19,10 +19,11 @@ jobs:
         run: |
           if [ "${{ github.event.inputs.approver }}" == "120269238-myseneca" ]; then
             echo "Destroy approved by ${{ github.event.inputs.approver }}"
-            echo "approved=true" >> $GITHUB_ENV  # Use environment files
+            echo "approved=true" >> $GITHUB_ENV 
           else
             echo "Destroy not approved by ${{ github.event.inputs.approver }}"
-            echo "approved=false" >> $GITHUB_ENV  # Use environment files
+            echo "approved=false" >> $GITHUB_ENV 
+          fi
 
 
   terraform_destroy_app:
