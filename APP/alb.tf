@@ -25,14 +25,13 @@ resource "aws_lb_listener" "lb_listener" {
   }
 }
 
-resource "aws_security_group_rule" "ecs_egress_to_rds" {
+resource "aws_security_group_rule" "alb_egress_to_ecs" {
   type              = "egress"
-  from_port         = 80
-  to_port           = 80
-  protocol    = "-1"
-  cidr_blocks       = ["0.0.0.0/0"] 
-  security_group_id  = data.terraform_remote_state.network.outputs.ecs_task_sg_id
-
+  from_port         = 8080
+  to_port           = 8080
+  protocol          = "tcp"
+  security_group_id = data.terraform_remote_state.network.outputs.alb_sg_id
+  source_security_group_id       =  data.terraform_remote_state.network.outputs.ecs_task_sg_id
 }
 
 
