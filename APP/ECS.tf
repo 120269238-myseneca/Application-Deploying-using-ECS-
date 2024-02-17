@@ -117,3 +117,4 @@ resource "aws_security_group_rule" "ecs_ingress_from_alb" {
   security_group_id = data.terraform_remote_state.network.outputs.ecs_task_sg_id
   source_security_group_id = data.terraform_remote_state.network.outputs.alb_sg_id
 }
+
