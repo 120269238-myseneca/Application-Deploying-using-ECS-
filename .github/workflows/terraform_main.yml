@@ -1,122 +1,93 @@
 name: Terraform Deployment Workflow
 
 on:
-  push:
-    branches:
-      - main 
-  pull_request:
-    branches:
-      - main  
+  workflow_dispatch:
+    inputs:
+      approver:
+        description: 'Terraform Deployment Approver'
+        required: true
+        default: '120269238-myseneca'
 
 jobs:
+  confirm:
+    runs-on: ubuntu-latest
+    outputs:
+      is_approved: ${{ steps.check_approval.outputs.approved }}
+    steps:
+      - name: Check Approver
+        id: check_approval
+        run: |
+          if [ "${{ github.event.inputs.approver }}" == "120269238-myseneca" ]; then
+            echo "Deployment approved by ${{ github.event.inputs.approver }}"
+            echo "approved=true" >> $GITHUB_OUTPUT
+          else
+            echo "Deployment not approved by ${{ github.event.inputs.approver }}"
+            echo "approved=false" >> $GITHUB_OUTPUT
+          fi
+
   terraform_vpc:
     name: Terraform VPC
+    needs: confirm
+    if: needs.confirm.outputs.is_approved == 'true'
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v2
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v2
+      - uses: actions/checkout@v2
+      - uses: hashicorp/setup-terraform@v2
         with:
           terraform_version: 1.7.3
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v1
+      - uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }} 
           aws-region: us-east-1
-
-
-
       - name: Terraform Init - VPC
-        run: |
-          cd VPC/
-          terraform init
-
+        run: cd VPC/ && terraform init
       - name: Terraform Validate - VPC
-        run: |
-          cd VPC/
-          terraform validate
-
+        run: cd VPC/ && terraform validate
       - name: Terraform Apply - VPC
-        run: |
-          cd VPC/
-          terraform apply -auto-approve
-
+        run: cd VPC/ && terraform apply -auto-approve
 
   terraform_rds:
     name: Terraform RDS
-    needs: terraform_vpc  
+    needs: terraform_vpc
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v2
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v2
+      - uses: actions/checkout@v2
+      - uses: hashicorp/setup-terraform@v2
         with:
           terraform_version: 1.7.3
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v1
+      - uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }} 
           aws-region: us-east-1
-
       - name: Terraform Init - RDS
-        run: |
-          cd RDS/
-          terraform init
-
+        run: cd RDS/ && terraform init
       - name: Terraform Validate - RDS
-        run: |
-          cd RDS/
-          terraform validate
-
+        run: cd RDS/ && terraform validate
       - name: Terraform Apply - RDS
-        run: |
-          cd RDS/
-          terraform apply -auto-approve
-
+        run: cd RDS/ && terraform apply -auto-approve
 
   terraform_app:
     name: Terraform APP
-    needs: terraform_rds  
+    needs: terraform_rds
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v2
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v2
+      - uses: actions/checkout@v2
+      - uses: hashicorp/setup-terraform@v2
         with:
           terraform_version: 1.7.3
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v1
+      - uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }} 
           aws-region: us-east-1
-
       - name: Terraform Init - APP
-        run: |
-          cd APP/
-          terraform init
-
+        run: cd APP/ && terraform init
       - name: Terraform Validate - APP
-        run: |
-          cd APP/
-          terraform validate
-
+        run: cd APP/ && terraform validate
       - name: Terraform Apply - APP
-        run: |
-          cd APP/
-          terraform apply -auto-approve
-
+        run: cd APP/ && terraform apply -auto-approve
