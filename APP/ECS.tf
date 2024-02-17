@@ -101,11 +101,12 @@ resource "aws_ecs_service" "ecs_service" {
 
 resource "aws_security_group_rule" "ecs_egress_to_rds" {
   type              = "egress"
-  from_port         = 3306
-  to_port           = 3306
-  protocol          = "tcp"
+  from_port         = 80
+  to_port           = 80
+  protocol    = "-1"
+  cidr_blocks       = ["0.0.0.0/0"] 
   security_group_id  = data.terraform_remote_state.network.outputs.ecs_task_sg_id
-  source_security_group_id     = data.terraform_remote_state.network.outputs.rds_sg_id
+
 }
 
 resource "aws_security_group_rule" "ecs_ingress_from_alb" {
